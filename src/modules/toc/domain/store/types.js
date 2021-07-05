@@ -1,0 +1,1 @@
+export const SET_SELECTED_PAGE_ID = 'SET_SELECTED_PAGE_ID';
