@@ -1,4 +1,4 @@
-export const dataset = {"entities":{"pages":{
+{"entities":{"pages":{
 			"Installation_guide": {
 
 				"id": "Installation_guide",

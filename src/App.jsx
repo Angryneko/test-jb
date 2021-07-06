@@ -17,26 +17,17 @@ const FlexWrapper = styled.div`
   height: calc(100vh - 70px);
 `
 
-function useForceUpdate() {
-  const [value, setValue] = useState(0);
-  return () => setValue(value + 1);
-}
-
 function App() {
-
-  const forceUpdate = useForceUpdate();
-
   const [isLoading, setIsLoading] = useState(true)
 
-  async function setConfig () {
-    const data = await getConfig()
-    setMenuConfig(data)
-    setIsLoading(false)
-    forceUpdate()
-  }
-
-  useEffect(()=>{
-    setConfig()
+  useEffect( () => {
+    async function setConfig () {
+      const data = await getConfig()
+      console.log({data})
+      setMenuConfig(data)
+      setIsLoading(false)
+    }
+    setConfig().then(()=> console.log('Data was inited'))
   }, [])
 
   return (
