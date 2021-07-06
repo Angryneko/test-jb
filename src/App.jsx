@@ -1,12 +1,12 @@
 import { GlobalStyles } from './common/ui/global-styles/styles';
 import { StoreProvider } from './common/providers/StoreProvider';
-import { TableOfContents } from "./modules/toc/ui/containers/TableOfContents";
-import { TocPreloader } from "./modules/toc/ui/preloader/TocPreloader";
-import { Header } from "./modules/header/ui/Header";
+import { TableOfContents } from "./modules/toc/ui/containers/TableOfContents.jsx";
+import { TocPreloader } from "./modules/toc/ui/preloader/TocPreloader.jsx";
+import { Header } from "./modules/header/ui/Header.jsx";
 
 import styled from 'styled-components';
-import React, { useState } from "react";
-import { Content } from "./modules/content/ui/Content";
+import React, { useEffect, useState } from "react";
+import { Content } from "./modules/content/ui/Content.jsx";
 import { setMenuConfig } from './menu-config.js'
 import  { getConfig } from "./modules/toc/data-access/api";
 
@@ -35,7 +35,9 @@ function App() {
     forceUpdate()
   }
 
-  setConfig()
+  useEffect(()=>{
+    setConfig()
+  }, [])
 
   return (
     <StoreProvider>

@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import PropTypes from "prop-types";
 
 const levelPadding = 16
 const contentPadding = 32
@@ -23,6 +24,11 @@ const LinkAnchorStyle = styled.li`
 	}
 `
 
-export const LinkAnchor = ({data, togglePage, level}) => {
+export const LinkAnchor = ({data, level}) => {
 	return (<LinkAnchorStyle level={level}>{data.title}</LinkAnchorStyle>)
+}
+
+LinkAnchor.propTypes = {
+	data: PropTypes.object.isRequired,
+	level: PropTypes.number.isRequired
 }

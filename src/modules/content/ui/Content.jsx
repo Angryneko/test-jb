@@ -29,10 +29,15 @@ const Anchor = styled.h2`
 
 export const Content = () => {
 	const selectedPageId = useSelector(getSelectedPageId)
+
+	function isAnchors () {
+		return selectedPageId && menuConfig.entities.pages[selectedPageId].anchors
+	}
+
 	return (<Wrapper>
 		<Title>{(menuConfig?.entities?.pages)? selectedPageId ? menuConfig.entities.pages[selectedPageId].title : 'Select page' : 'Loading...'}</Title>
-		{selectedPageId && menuConfig.entities.pages[selectedPageId].anchors ? menuConfig.entities.pages[selectedPageId].anchors.map(anchor=>(
-			<Anchor># {menuConfig.entities.anchors[anchor].title}</Anchor>
+		{isAnchors() ? menuConfig.entities.pages[selectedPageId].anchors.map(anchor=>(
+			<Anchor key={anchor}># {menuConfig.entities.anchors[anchor].title}</Anchor>
 		)): null}
 	</Wrapper>)
 }

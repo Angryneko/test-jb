@@ -1,17 +1,15 @@
 import styled from 'styled-components';
 import React, { useEffect, useState } from "react";
-import { TocPreloader } from "../preloader/TocPreloader";
 
 import { useDispatch, useSelector } from 'react-redux';
 
-import {setSelectedPageId} from "../../domain/store/actions";
-import {getSelectedPageId} from "../../domain/store/selectors";
+import { setSelectedPageId } from "../../domain/store/actions";
+import { getSelectedPageId } from "../../domain/store/selectors";
 
 import { menuConfig } from '../../../../menu-config.js';
 
-import { LinkPage } from "./LinkPage";
-import { LinkAnchor } from "./LinkAnchor";
-console.log('topLevel:', menuConfig.topLevelIds)
+import { LinkPage } from "./LinkPage.jsx";
+import { LinkAnchor } from "./LinkAnchor.jsx";
 
 const Wrapper = styled.ul`
    height: 100%;
@@ -60,21 +58,16 @@ export const TableOfContents = () => {
     }
 
     useEffect(() => {
-        console.log({menuConfig})
         console.log('openIds:', openIds)
-
         const renderByKeyPath = (openTreeElements, elementsToRender, level = 0) => {
             let output = [];
             elementsToRender.forEach(element => {
-
                 output.push({level, type: 'page', id: element.id});
-
                 if (selectedPageId === element.id && element.anchors) {
                     element.anchors.forEach(anchor => {
                         output.push({level, type: 'anchor', id:anchor});
                     })
                 }
-
                 if (openTreeElements.includes(element.id) && element.pages) {
                     output = output.concat(
                         renderByKeyPath(
@@ -85,17 +78,14 @@ export const TableOfContents = () => {
                     )
                 }
             })
-
             return output;
         }
 
         if(openIds.length) {
-
             setAllPagesIds(renderByKeyPath(
                 openIds,
                 menuConfig.topLevelIds.map(id => menuConfig.entities.pages[id])
             ))
-
         }
         else {
             setAllPagesIds([...menuConfig.topLevelIds.map(item => {
@@ -106,19 +96,17 @@ export const TableOfContents = () => {
 
     return (
     <Wrapper>
-      { (allPagesIds.length) ? allPagesIds.map((page, i) => (
+      { allPagesIds.length && allPagesIds.map((page) => (
           (page.type === 'page') ?
           <LinkPage key={page.id}
             data={menuConfig.entities.pages[page.id]}
-            pageId={page.id}
             isActive={openIds.includes(page.id)}
             isSelectedPage={selectedPageId === page.id}
             togglePage={togglePage}/> :
           <LinkAnchor key={page.id}
             data={menuConfig.entities.anchors[page.id]}
-            pageId={page.id}
             level={anchorsLevel()}/>
-      )) : <TocPreloader/>
+      ))
       }
     </Wrapper>)
 }
