@@ -1,20 +1,16 @@
 import React from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
+import { Link } from 'react-router-dom';
 
 const levelPadding = 16
 const contentPadding = 32
 
-const LinkAnchorStyle = styled.li`
+const LiAnchorStyle = styled.li`
 	position: relative;
 	min-height: 32px;
 	width: 100%;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	/*background: #f4f4f4;*/
-	background: #eee;
-	padding-right: ${contentPadding}px;
-	padding-left: ${props => (props.level + 1) * levelPadding + contentPadding}px;
+	background: #f4f4f4;
 	font-size: 14px;
 	line-height: 1.2;
 	cursor: pointer;
@@ -24,11 +20,28 @@ const LinkAnchorStyle = styled.li`
 	}
 `
 
-export const LinkAnchor = ({data, level}) => {
-	return (<LinkAnchorStyle level={level}>{data.title}</LinkAnchorStyle>)
+const LinkStyle = styled(Link)`
+	display: block;
+	color: #333;
+	text-decoration: none;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	padding-right: ${contentPadding}px;
+	padding-left: ${props => (props['level-page'] + props['level-anchor'] + 1) * levelPadding + contentPadding}px;
+`
+
+export const LinkAnchor = ({anchor, level, toggleAnchor}) => {
+	return (<LiAnchorStyle
+			data-toc-scroll={anchor.id}
+			onClick={() => toggleAnchor(anchor)}>
+			<LinkStyle to={anchor.url + anchor.anchor} level-page={level} level-anchor={anchor.level}>
+				{anchor.title}
+			</LinkStyle>
+	</LiAnchorStyle>)
 }
 
 LinkAnchor.propTypes = {
-	data: PropTypes.object.isRequired,
-	level: PropTypes.number.isRequired
+	anchor: PropTypes.object.isRequired,
+	level: PropTypes.number.isRequired,
+	toggleAnchor: PropTypes.func.isRequired
 }

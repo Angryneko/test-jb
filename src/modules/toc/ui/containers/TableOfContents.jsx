@@ -1,10 +1,17 @@
 import styled from 'styled-components';
-import React, { useEffect, useState } from "react";
+import React, {useEffect} from "react";
 
 import { useDispatch, useSelector } from 'react-redux';
 
-import { setSelectedPageId } from "../../domain/store/actions";
-import { getSelectedPageId } from "../../domain/store/selectors";
+import { setSelectedPageId, setOpenIds, setSelectedAnchorId } from "../../domain/store/actions";
+import {
+    getOpenIds,
+    getSelectedPageId,
+    getSelectedAnchorId,
+    getAllPagesIds
+} from "../../domain/store/selectors";
+
+import { scrollToElement } from "../../../../common/helpers/scrollToElement";
 
 import { menuConfig } from '../../../../menu-config.js';
 
@@ -22,90 +29,67 @@ const Wrapper = styled.ul`
 `
 
 export const TableOfContents = () => {
-    const [openIds, setOpenIds] = useState([])
-    const [allPagesIds, setAllPagesIds] = useState([])
-
-    const selectedPageId = useSelector(getSelectedPageId)
-
+    console.log('TABLE___________________')
     const dispatch = useDispatch();
+    const allPagesIds = useSelector(getAllPagesIds);
+
+    const selectedPageId = useSelector(getSelectedPageId);
+    const selectedAnchorId = useSelector(getSelectedAnchorId);
+    const openIds = useSelector(getOpenIds);
 
     function addOpenPage (data) {
         console.log('add')
-        setOpenIds( openIds => [...openIds, data.id])
+        dispatch(setOpenIds( [...openIds, data.id]))
     }
 
     function removeOpenPage(data) {
         console.log('remove')
-        setOpenIds(openIds.filter(item => item !== data.id))
+        dispatch(setOpenIds(openIds.filter(item => item !== data.id)))
     }
 
     function togglePage(data) {
-        dispatch(setSelectedPageId(data.id))
-        if(openIds.includes(data.id)) {
+        if (data.url) {
+            scrollToElement({name: 'toc', id: data.id});
+            dispatch(setSelectedPageId(data.id));
+        }
+        if (openIds.includes(data.id)) {
             if(data.id === selectedPageId) {
-                removeOpenPage(data)
+                removeOpenPage(data);
             }
         } else {
-            addOpenPage(data)
+            addOpenPage(data);
         }
     }
+
+    function toggleAnchor(data) {
+        dispatch(setSelectedAnchorId(data.id));
+    }
+
 
     function anchorsLevel() {
         if(selectedPageId) {
-            return menuConfig.entities.pages[selectedPageId].level
+            return menuConfig.entities.pages[selectedPageId].level;
         }
-        return 0
+        return 0;
     }
 
-    useEffect(() => {
-        console.log('openIds:', openIds)
-        const renderByKeyPath = (openTreeElements, elementsToRender, level = 0) => {
-            let output = [];
-            elementsToRender.forEach(element => {
-                output.push({level, type: 'page', id: element.id});
-                if (selectedPageId === element.id && element.anchors) {
-                    element.anchors.forEach(anchor => {
-                        output.push({level, type: 'anchor', id:anchor});
-                    })
-                }
-                if (openTreeElements.includes(element.id) && element.pages) {
-                    output = output.concat(
-                        renderByKeyPath(
-                            openTreeElements,
-                            element.pages.map(id => menuConfig.entities.pages[id]),
-                            level + 1
-                        )
-                    )
-                }
-            })
-            return output;
-        }
-
-        if(openIds.length) {
-            setAllPagesIds(renderByKeyPath(
-                openIds,
-                menuConfig.topLevelIds.map(id => menuConfig.entities.pages[id])
-            ))
-        }
-        else {
-            setAllPagesIds([...menuConfig.topLevelIds.map(item => {
-                return {type: 'page', id: item}
-            })])
-        }
-    }, [ openIds, selectedPageId ])
+    useEffect( () => {
+        scrollToElement({name: 'toc-scroll', id: selectedAnchorId || selectedPageId, smooth: false})
+    }, [ ])
 
     return (
     <Wrapper>
       { allPagesIds.length && allPagesIds.map((page) => (
           (page.type === 'page') ?
           <LinkPage key={page.id}
-            data={menuConfig.entities.pages[page.id]}
+            page={menuConfig.entities.pages[page.id]}
             isActive={openIds.includes(page.id)}
             isSelectedPage={selectedPageId === page.id}
             togglePage={togglePage}/> :
           <LinkAnchor key={page.id}
-            data={menuConfig.entities.anchors[page.id]}
-            level={anchorsLevel()}/>
+            anchor={menuConfig.entities.anchors[page.id]}
+            level={anchorsLevel()}
+            toggleAnchor={toggleAnchor}/>
       ))
       }
     </Wrapper>)
