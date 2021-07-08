@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import React, {useEffect} from "react";
+import React, {useEffect, useMemo} from "react";
 import { menuConfig } from '../../../menu-config.js';
 import { useSelector } from 'react-redux';
 import { getSelectedPageId, getSelectedAnchorId } from "../../toc/domain/store/selectors";
@@ -27,9 +27,8 @@ export const Content = () => {
 	const selectedPageId = useSelector(getSelectedPageId);
 	const selectedAnchorId = useSelector(getSelectedAnchorId);
 
-	function isAnchors () {
-		return selectedPageId && menuConfig.entities.pages[selectedPageId].anchors;
-	}
+
+	const isAnchors = useMemo(()=> selectedPageId && menuConfig.entities.pages[selectedPageId].anchors, [selectedPageId])
 
 	useEffect(() => {
 		if(selectedAnchorId) {
@@ -44,7 +43,7 @@ export const Content = () => {
 			</Title>
 			<FishText/>
 		</section>
-		{isAnchors() ? menuConfig.entities.pages[selectedPageId].anchors.map(anchor => (
+		{isAnchors && menuConfig.entities.pages[selectedPageId].anchors.map(anchor => (
 			<section key={anchor}>
 				<Anchor
 	        as={'h' + (menuConfig.entities.anchors[anchor].level + 2)}
@@ -54,6 +53,6 @@ export const Content = () => {
 				</Anchor>
 				<FishText/>
 			</section>
-		)): null}
+		))}
 	</Wrapper>)
 }

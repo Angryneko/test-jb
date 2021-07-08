@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import React, {useEffect} from "react";
+import React, {useEffect, useMemo} from "react";
 import {useParams, useHistory} from 'react-router-dom';
 import {useSelector, useDispatch} from 'react-redux';
 
@@ -45,9 +45,8 @@ export const Main = () => {
   const {urlPage} = useParams();
   let history = useHistory();
 
-  function showBlocks() {
-    return allPagesIds.length && wasInit
-  }
+
+  const showBlocks = useMemo(() => allPagesIds.length && wasInit, [allPagesIds, wasInit])
 
   useEffect(() => {
 
@@ -151,8 +150,8 @@ export const Main = () => {
     <Wrapper>
       <Header/>
         <FlexWrapper>
-          {showBlocks() ? <TableOfContents/> : <TocPreloader/>}
-          {showBlocks() ? <Content/> : <ContentLoading>Loading</ContentLoading>}
+          {showBlocks ? <TableOfContents/> : <TocPreloader/>}
+          {showBlocks ? <Content/> : <ContentLoading>Loading</ContentLoading>}
         </FlexWrapper>
     </Wrapper>
   );
