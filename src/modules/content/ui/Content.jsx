@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import { getSelectedPageId, getSelectedAnchorId } from "../../toc/domain/store/selectors";
 
 import { FishText } from "./FishText";
-import {scrollToElement} from "../../../common/helpers/scrollToElement";
+import { scrollToElement } from "../../../common/helpers/scrollToElement";
 
 const Wrapper = styled.div`
   height: 100%;

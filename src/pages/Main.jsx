@@ -1,15 +1,14 @@
 import styled from 'styled-components';
 import React, {useEffect} from "react";
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { useHistory } from "react-router-dom";
 
 import { Content } from "../modules/content/ui/Content.jsx";
 import { TableOfContents } from "../modules/toc/ui/containers/TableOfContents.jsx";
 import { TocPreloader } from "../modules/toc/ui/preloader/TocPreloader.jsx";
 import { Header } from "../modules/header/ui/Header.jsx";
 
-import { getIsLoading, getWasInit, getOpenIds, getAllPagesIds, getTreeOpenIds} from "../modules/toc/domain/store/selectors";
+import { getIsLoading, getWasInit, getOpenIds, getAllPagesIds } from "../modules/toc/domain/store/selectors";
 import {
 	setOpenIds,
 	setSelectedPageId,
@@ -51,45 +50,49 @@ export const Main = () => {
 
 	useEffect(() => {
 
-		function findAllOpenIdsAndSelectedPageId() {
+		function getSelectedPage () {
 			if (urlPage === undefined) {
 				history.replace(menuConfig.entities.pages[menuConfig.topLevelIds[0]].url)
 			}
-			const selectedPage = Object.values(menuConfig.entities.pages).find(page => page.url === urlPage);
-			if(!selectedPage) {
+			let selectedPage = Object.values(menuConfig.entities.pages).find(page => page.url === urlPage);
+
+			if(!selectedPage) { //redirect to first page
 				history.replace(menuConfig.entities.pages[menuConfig.topLevelIds[0]].url)
-				//TODO: 404
-				return;
+				selectedPage = Object.values(menuConfig.entities.pages).find(page => page.id === menuConfig.topLevelIds[0])
 			}
-			let openIds = [selectedPage.id];
+			return selectedPage
+		}
+
+		function getTreeOpenIdsAndOpenIds(selectedPage) {
+			let arrayParentIds = [selectedPage.id];
 			let parentId = selectedPage?.parentId;
 			let tree = {}
 			tree[selectedPage.id] = {}
 
 			while (parentId) {
 				const parent = menuConfig.entities.pages[parentId];
-				openIds.push(parent.id);
-
+				arrayParentIds.push(parent.id);
 				tree = {
 					[parentId]: tree
 				};
-
 				parentId = parent?.parentId;
 			}
-
-			return {openIds, selectedPageId: selectedPage.id, tree}
+			return {openIds: arrayParentIds, tree}
 		}
-		function findSelectedAnchor() {
+
+		function getSelectedAnchor() {
 			const hash = window.location.hash;
 			if (hash) {
 				return Object.values(menuConfig.entities.anchors).find(anchor => anchor.anchor === hash);
 			}
 			return null;
 		}
+
 		if (!isLoading) {
-			const { openIds, selectedPageId, tree } = findAllOpenIdsAndSelectedPageId();
-			const selectedAnchor = findSelectedAnchor();
-			dispatch(setSelectedPageId(selectedPageId));
+			const selectedPage = getSelectedPage()
+			const { openIds, tree } = getTreeOpenIdsAndOpenIds(selectedPage);
+			const selectedAnchor = getSelectedAnchor();
+			dispatch(setSelectedPageId(selectedPage.id));
 			dispatch(setOpenIds(openIds));
 			dispatch(setTreeOpenIds(tree));
 			if (selectedAnchor) {
@@ -136,7 +139,7 @@ export const Main = () => {
 			}
 			else {
 				dispatch(setAllPagesIds([...menuConfig.topLevelIds.map(item => {
-					return {type: 'page', id: item}
+					return {type: 'page', id: item, level: 0}
 				})]))
 
 			}

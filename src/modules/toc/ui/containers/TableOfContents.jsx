@@ -1,23 +1,24 @@
 import styled from 'styled-components';
 import React, {useEffect} from "react";
 
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
-import { setSelectedPageId, setOpenIds, setSelectedAnchorId, setTreeOpenIds } from "../../domain/store/actions";
+import {setSelectedPageId, setOpenIds, setSelectedAnchorId, setTreeOpenIds} from "../../domain/store/actions";
 import {
-    getOpenIds,
-    getSelectedPageId,
-    getSelectedAnchorId,
-    getAllPagesIds,
-    getTreeOpenIds
+  getOpenIds,
+  getSelectedPageId,
+  getSelectedAnchorId,
+  getAllPagesIds,
+  getTreeOpenIds
 } from "../../domain/store/selectors";
 
-import { scrollToElement } from "../../../../common/helpers/scrollToElement";
+import {scrollToElement} from "../../../../common/helpers/scrollToElement";
+import {findAllRelatedNodes} from "../../../../common/helpers/findAllRelatedNodes";
 
-import { menuConfig } from '../../../../menu-config.js';
+import {menuConfig} from '../../../../menu-config.js';
 
-import { LinkPage } from "./LinkPage.jsx";
-import { LinkAnchor } from "./LinkAnchor.jsx";
+import {LinkPage} from "./LinkPage.jsx";
+import {LinkAnchor} from "./LinkAnchor.jsx";
 
 const Wrapper = styled.ul`
    height: 100%;
@@ -30,119 +31,106 @@ const Wrapper = styled.ul`
 `
 
 export const TableOfContents = () => {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-    const allPagesIds = useSelector(getAllPagesIds);
-    const selectedPageId = useSelector(getSelectedPageId);
-    const selectedAnchorId = useSelector(getSelectedAnchorId);
-    const openIds = useSelector(getOpenIds);
-    const treeOpenIds = useSelector(getTreeOpenIds);
+  const allPagesIds = useSelector(getAllPagesIds);
+  const selectedPageId = useSelector(getSelectedPageId);
+  const selectedAnchorId = useSelector(getSelectedAnchorId);
+  const openIds = useSelector(getOpenIds);
+  const treeOpenIds = useSelector(getTreeOpenIds);
 
-    function findAllRelatedNodes(page) {
-        let arrayParentIds = [];
-        let parentId = page?.parentId;
-        while (parentId) {
-            const parent = menuConfig.entities.pages[parentId];
-            arrayParentIds.push(parent.id);
-            parentId = parent?.parentId;
-        }
-        return arrayParentIds.reverse()
+  function addOpenPage(page) {
+    dispatch(setOpenIds([...openIds, page.id]));
+  }
+
+  function addItemToTreeOpenIds(page) {
+    const copyTree = JSON.parse(JSON.stringify(treeOpenIds))
+    if (!page.parentId) {
+      copyTree[page.id] = {}
+    } else {
+      const arrayParentIds = findAllRelatedNodes(page)
+      let linkInTree = copyTree
+      arrayParentIds.forEach(element => {
+        linkInTree = linkInTree[element]
+      })
+      linkInTree[page.id] = {}
+    }
+    dispatch(setTreeOpenIds(copyTree))
+  }
+
+  function removeItemsFromTreeOpenIdsAndOpenIds(page) {
+    const copyTree = JSON.parse(JSON.stringify(treeOpenIds))
+    let linkInTree = copyTree
+    const arrayParentIds = findAllRelatedNodes(page)
+
+    arrayParentIds.forEach(element => {
+      if (element in linkInTree && element !== page.id) {
+        linkInTree = linkInTree[element]
+      }
+    })
+
+    linkInTree = {
+      [page.id]: linkInTree[page.id]
     }
 
-    function addOpenPage (page) {
-        dispatch(setOpenIds( [...openIds, page.id]));
+    let idsForDelete = []
+
+    JSON.stringify(linkInTree, (key, value) => {
+      if (key) {
+        idsForDelete.push(key)
+      }
+      return value
+    })
+
+    if (page.id in copyTree) {
+      delete copyTree[page.id]
+    } else {
+      linkInTree = {}
     }
 
-    function addItemToTreeOpenIds (page) {
-        const copyTree = JSON.parse(JSON.stringify(treeOpenIds))
-        if(!page.parentId) {
-            copyTree[page.id] = {}
-        }
-        else {
-            const arrayParentIds = findAllRelatedNodes(page)
-            let linkInTree = copyTree
-            arrayParentIds.forEach(element => {
-                linkInTree = linkInTree[element]
-            })
-            linkInTree[page.id] = {}
-        }
-        dispatch(setTreeOpenIds(copyTree))
+    let copyOpenIds = [...openIds]
+
+    copyOpenIds = copyOpenIds.filter(item => !idsForDelete.includes(item));
+
+    dispatch(setTreeOpenIds(copyTree));
+    dispatch(setOpenIds(copyOpenIds));
+
+  }
+
+  function togglePage(page) {
+    if (page.url && selectedPageId !== page.id) {
+      scrollToElement({name: 'toc', id: page.id});
+      dispatch(setSelectedPageId(page.id));
     }
-
-    function removeItemsFromTreeOpenIdsAndOpenIds (page) {
-        const copyTree = JSON.parse(JSON.stringify(treeOpenIds))
-        let linkInTree = copyTree
-        const arrayParentIds = findAllRelatedNodes(page)
-
-        arrayParentIds.forEach(element => {
-            if (element in linkInTree && element !== page.id) {
-                linkInTree = linkInTree[element]
-            }
-        })
-
-        linkInTree = {
-            [page.id]: linkInTree[page.id]
-        }
-
-        let idsForDelete = []
-
-        JSON.stringify(linkInTree,(key, value) => {
-            if(key) {
-                idsForDelete.push(key)
-            }
-            return value
-        })
-
-        if(page.id in copyTree) {
-            delete copyTree[page.id]
-        }
-        else {
-            linkInTree = {}
-        }
-
-        let copyOpenIds = [...openIds]
-
-        copyOpenIds = copyOpenIds.filter(item => !idsForDelete.includes(item));
-
-        dispatch(setTreeOpenIds(copyTree));
-        dispatch(setOpenIds(copyOpenIds));
-
+    if (openIds.includes(page.id)) {
+      if (page.id === selectedPageId || !page.url) {
+        removeItemsFromTreeOpenIdsAndOpenIds(page)
+      }
+    } else {
+      addOpenPage(page);
+      addItemToTreeOpenIds(page);
     }
+  }
 
-    function togglePage(page) {
-        if (page.url && selectedPageId !== page.id) {
-            scrollToElement({name: 'toc', id: page.id});
-            dispatch(setSelectedPageId(page.id));
-        }
-        if (openIds.includes(page.id)) {
-            if(page.id === selectedPageId || !page.url) {
-                removeItemsFromTreeOpenIdsAndOpenIds(page)
-            }
-        } else {
-            addOpenPage(page);
-            addItemToTreeOpenIds(page);
-        }
+  function toggleAnchor(anchor) {
+    dispatch(setSelectedAnchorId(anchor.id));
+  }
+
+  function anchorsLevel() {
+    if (selectedPageId) {
+      return menuConfig.entities.pages[selectedPageId].level;
     }
+    return 0;
+  }
 
-    function toggleAnchor(anchor) {
-        dispatch(setSelectedAnchorId(anchor.id));
-    }
+  useEffect(() => {
+    scrollToElement({name: 'toc-scroll', id: selectedAnchorId || selectedPageId, smooth: false});
+  }, [])
 
-    function anchorsLevel() {
-        if(selectedPageId) {
-            return menuConfig.entities.pages[selectedPageId].level;
-        }
-        return 0;
-    }
-
-    useEffect( () => {
-        scrollToElement({name: 'toc-scroll', id: selectedAnchorId || selectedPageId, smooth: false});
-    }, [])
-
-    return (
+  return (
     <Wrapper>
-      { allPagesIds.length && allPagesIds.map((page) => (
-          (page.type === 'page') ?
+      {allPagesIds.length && allPagesIds.map((page) => (
+        (page.type === 'page') ?
           <LinkPage key={page.id}
             page={menuConfig.entities.pages[page.id]}
             isActive={openIds.includes(page.id)}
@@ -152,7 +140,7 @@ export const TableOfContents = () => {
             anchor={menuConfig.entities.anchors[page.id]}
             level={anchorsLevel()}
             toggleAnchor={toggleAnchor}/>
-      ))
-      }
+        ))
+        }
     </Wrapper>)
 }

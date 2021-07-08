@@ -47,8 +47,6 @@ const LineLevelTwo = styled(Line)`
   margin-left: 32px;
 `
 
-//const lines = ['LongLine', 'LineLevelOneShort', 'LineLevelOne']
-
 export const TocPreloader = () => {
   return (
   <PreloaderWrapper>

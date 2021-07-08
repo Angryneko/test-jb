@@ -32,11 +32,11 @@ const LinkStyle = styled(Link)`
 
 export const LinkAnchor = ({anchor, level, toggleAnchor}) => {
 	return (<LiAnchorStyle
-			data-toc-scroll={anchor.id}
-			onClick={() => toggleAnchor(anchor)}>
-			<LinkStyle to={anchor.url + anchor.anchor} level-page={level} level-anchor={anchor.level}>
-				{anchor.title}
-			</LinkStyle>
+		data-toc-scroll={anchor.id}
+		onClick={() => toggleAnchor(anchor)}>
+		<LinkStyle to={anchor.url + anchor.anchor} level-page={level} level-anchor={anchor.level}>
+      {anchor.title}
+		</LinkStyle>
 	</LiAnchorStyle>)
 }
 
