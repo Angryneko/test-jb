@@ -9,8 +9,14 @@ import { TableOfContents } from "../modules/toc/ui/containers/TableOfContents.js
 import { TocPreloader } from "../modules/toc/ui/preloader/TocPreloader.jsx";
 import { Header } from "../modules/header/ui/Header.jsx";
 
-import { getIsLoading, getWasInit, getOpenIds, getAllPagesIds} from "../modules/toc/domain/store/selectors";
-import { setOpenIds, setSelectedPageId, setSelectedAnchorId, setWasInit, setAllPagesIds } from "../modules/toc/domain/store/actions";
+import { getIsLoading, getWasInit, getOpenIds, getAllPagesIds, getTreeOpenIds} from "../modules/toc/domain/store/selectors";
+import {
+	setOpenIds,
+	setSelectedPageId,
+	setSelectedAnchorId,
+	setWasInit,
+	setAllPagesIds,
+	setTreeOpenIds } from "../modules/toc/domain/store/actions";
 import { getSelectedPageId } from "../modules/toc/domain/store/selectors";
 
 import { menuConfig } from "../menu-config";
@@ -44,23 +50,34 @@ export const Main = () => {
 	}
 
 	useEffect(() => {
+
 		function findAllOpenIdsAndSelectedPageId() {
 			if (urlPage === undefined) {
 				history.replace(menuConfig.entities.pages[menuConfig.topLevelIds[0]].url)
-				//const firstPage = menuConfig.topLevelIds[0];
-				//return {openIds: [firstPage], selectedPageId: firstPage};
 			}
 			const selectedPage = Object.values(menuConfig.entities.pages).find(page => page.url === urlPage);
-			//TODO: 404
+			if(!selectedPage) {
+				history.replace(menuConfig.entities.pages[menuConfig.topLevelIds[0]].url)
+				//TODO: 404
+				return;
+			}
 			let openIds = [selectedPage.id];
 			let parentId = selectedPage?.parentId;
+			let tree = {}
+			tree[selectedPage.id] = {}
 
 			while (parentId) {
 				const parent = menuConfig.entities.pages[parentId];
 				openIds.push(parent.id);
+
+				tree = {
+					[parentId]: tree
+				};
+
 				parentId = parent?.parentId;
 			}
-			return {openIds, selectedPageId: selectedPage.id}
+
+			return {openIds, selectedPageId: selectedPage.id, tree}
 		}
 		function findSelectedAnchor() {
 			const hash = window.location.hash;
@@ -70,10 +87,11 @@ export const Main = () => {
 			return null;
 		}
 		if (!isLoading) {
-			const { openIds, selectedPageId } = findAllOpenIdsAndSelectedPageId();
+			const { openIds, selectedPageId, tree } = findAllOpenIdsAndSelectedPageId();
 			const selectedAnchor = findSelectedAnchor();
 			dispatch(setSelectedPageId(selectedPageId));
 			dispatch(setOpenIds(openIds));
+			dispatch(setTreeOpenIds(tree));
 			if (selectedAnchor) {
 				dispatch(setSelectedAnchorId(selectedAnchor.id));
 			}
@@ -92,17 +110,15 @@ export const Main = () => {
 			return list;
 		}
 
-		console.log('openIds:', openIds)
-		const generateListOfDisplayedItems = (openTreeElements, elementsToRender, level = 0) => {
+		const generateListOfDisplayedItems = (elementsToRender, level = 0) => {
 			let output = [];
 			elementsToRender.forEach(element => {
 				output.push({level, type: 'page', id: element.id});
 				output = output.concat(generateListAnchors(element, level));
 
-				if (openTreeElements.includes(element.id) && element.pages) {
+				if (openIds.includes(element.id) && element.pages) {
 					output = output.concat(
 							generateListOfDisplayedItems(
-									openTreeElements,
 									element.pages.map(id => menuConfig.entities.pages[id]),
 									level + 1
 							)
@@ -115,7 +131,6 @@ export const Main = () => {
 		if(wasInit) {
 			if(openIds.length) {
 				dispatch(setAllPagesIds(generateListOfDisplayedItems(
-						openIds,
 						menuConfig.topLevelIds.map(id => menuConfig.entities.pages[id])
 				)))
 			}
@@ -123,6 +138,7 @@ export const Main = () => {
 				dispatch(setAllPagesIds([...menuConfig.topLevelIds.map(item => {
 					return {type: 'page', id: item}
 				})]))
+
 			}
 		}
 

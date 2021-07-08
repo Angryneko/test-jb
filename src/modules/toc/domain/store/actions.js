@@ -4,7 +4,7 @@ import {
 	SET_IS_LOADING,
 	SET_OPEN_IDS,
 	SET_SELECTED_ANCHOR_ID,
-	SET_ALL_PAGES_IDS
+	SET_ALL_PAGES_IDS, SET_TREE_OPEN_IDS
 } from "./types";
 
 export const setWasInit = (wasInit) => ({
@@ -35,4 +35,9 @@ export const setIsLoading = (isLoading) => ({
 export const setOpenIds = (openIds) => ({
 	type: SET_OPEN_IDS,
 	openIds
+})
+
+export const setTreeOpenIds = (treeOpenIds) => ({
+	type: SET_TREE_OPEN_IDS,
+	treeOpenIds
 })

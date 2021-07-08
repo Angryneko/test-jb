@@ -3,12 +3,13 @@ import React, {useEffect} from "react";
 
 import { useDispatch, useSelector } from 'react-redux';
 
-import { setSelectedPageId, setOpenIds, setSelectedAnchorId } from "../../domain/store/actions";
+import { setSelectedPageId, setOpenIds, setSelectedAnchorId, setTreeOpenIds } from "../../domain/store/actions";
 import {
     getOpenIds,
     getSelectedPageId,
     getSelectedAnchorId,
-    getAllPagesIds
+    getAllPagesIds,
+    getTreeOpenIds
 } from "../../domain/store/selectors";
 
 import { scrollToElement } from "../../../../common/helpers/scrollToElement";
@@ -29,42 +30,103 @@ const Wrapper = styled.ul`
 `
 
 export const TableOfContents = () => {
-    console.log('TABLE___________________')
     const dispatch = useDispatch();
-    const allPagesIds = useSelector(getAllPagesIds);
 
+    const allPagesIds = useSelector(getAllPagesIds);
     const selectedPageId = useSelector(getSelectedPageId);
     const selectedAnchorId = useSelector(getSelectedAnchorId);
     const openIds = useSelector(getOpenIds);
+    const treeOpenIds = useSelector(getTreeOpenIds);
 
-    function addOpenPage (data) {
-        console.log('add')
-        dispatch(setOpenIds( [...openIds, data.id]))
-    }
-
-    function removeOpenPage(data) {
-        console.log('remove')
-        dispatch(setOpenIds(openIds.filter(item => item !== data.id)))
-    }
-
-    function togglePage(data) {
-        if (data.url) {
-            scrollToElement({name: 'toc', id: data.id});
-            dispatch(setSelectedPageId(data.id));
+    function findAllRelatedNodes(page) {
+        let arrayParentIds = [];
+        let parentId = page?.parentId;
+        while (parentId) {
+            const parent = menuConfig.entities.pages[parentId];
+            arrayParentIds.push(parent.id);
+            parentId = parent?.parentId;
         }
-        if (openIds.includes(data.id)) {
-            if(data.id === selectedPageId) {
-                removeOpenPage(data);
+        return arrayParentIds.reverse()
+    }
+
+    function addOpenPage (page) {
+        dispatch(setOpenIds( [...openIds, page.id]));
+    }
+
+    function addItemToTreeOpenIds (page) {
+        const copyTree = JSON.parse(JSON.stringify(treeOpenIds))
+        if(!page.parentId) {
+            copyTree[page.id] = {}
+        }
+        else {
+            const arrayParentIds = findAllRelatedNodes(page)
+            let linkInTree = copyTree
+            arrayParentIds.forEach(element => {
+                linkInTree = linkInTree[element]
+            })
+            linkInTree[page.id] = {}
+        }
+        dispatch(setTreeOpenIds(copyTree))
+    }
+
+    function removeItemsFromTreeOpenIdsAndOpenIds (page) {
+        const copyTree = JSON.parse(JSON.stringify(treeOpenIds))
+        let linkInTree = copyTree
+        const arrayParentIds = findAllRelatedNodes(page)
+
+        arrayParentIds.forEach(element => {
+            if (element in linkInTree && element !== page.id) {
+                linkInTree = linkInTree[element]
+            }
+        })
+
+        linkInTree = {
+            [page.id]: linkInTree[page.id]
+        }
+
+        let idsForDelete = []
+
+        JSON.stringify(linkInTree,(key, value) => {
+            if(key) {
+                idsForDelete.push(key)
+            }
+            return value
+        })
+
+        if(page.id in copyTree) {
+            delete copyTree[page.id]
+        }
+        else {
+            linkInTree = {}
+        }
+
+        let copyOpenIds = [...openIds]
+
+        copyOpenIds = copyOpenIds.filter(item => !idsForDelete.includes(item));
+
+        dispatch(setTreeOpenIds(copyTree));
+        dispatch(setOpenIds(copyOpenIds));
+
+    }
+
+    function togglePage(page) {
+        if (page.url && selectedPageId !== page.id) {
+            scrollToElement({name: 'toc', id: page.id});
+            dispatch(setSelectedPageId(page.id));
+        }
+        if (openIds.includes(page.id)) {
+            if(page.id === selectedPageId || !page.url) {
+                removeItemsFromTreeOpenIdsAndOpenIds(page)
             }
         } else {
-            addOpenPage(data);
+            addOpenPage(page);
+            addItemToTreeOpenIds(page);
         }
     }
 
-    function toggleAnchor(data) {
-        dispatch(setSelectedAnchorId(data.id));
+    function toggleAnchor(anchor) {
+        dispatch(setSelectedAnchorId(anchor.id));
     }
-
 
     function anchorsLevel() {
         if(selectedPageId) {
@@ -74,8 +136,8 @@ export const TableOfContents = () => {
     }
 
     useEffect( () => {
-        scrollToElement({name: 'toc-scroll', id: selectedAnchorId || selectedPageId, smooth: false})
-    }, [ ])
+        scrollToElement({name: 'toc-scroll', id: selectedAnchorId || selectedPageId, smooth: false});
+    }, [])
 
     return (
     <Wrapper>

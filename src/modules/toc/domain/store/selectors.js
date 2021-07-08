@@ -21,3 +21,7 @@ export const getIsLoading = (state) => {
 export const getOpenIds = (state) => {
 	return state.tocData.openIds;
 }
+
+export const getTreeOpenIds = (state) => {
+	return state.tocData.treeOpenIds
+}

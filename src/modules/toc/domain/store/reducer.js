@@ -4,9 +4,9 @@ import {
 	SET_OPEN_IDS,
 	SET_SELECTED_ANCHOR_ID,
 	SET_WAS_INIT,
-	SET_ALL_PAGES_IDS
+	SET_ALL_PAGES_IDS,
+	SET_TREE_OPEN_IDS
 } from "./types";
-import {menuConfig} from "../../../../menu-config";
 
 const initialState = {
 	wasInit: false,
@@ -14,38 +14,9 @@ const initialState = {
 	selectedAnchorId: null,
 	isLoading: true,
 	allPagesIds: [],
-	openIds: []
+	openIds: [],
+	treeOpenIds: {}
 };
-
-function generateListAnchors(state, element, level) {
-	let list = [];
-	if (state.selectedPageId === element.id && element.anchors) {
-		element.anchors.forEach(anchor => {
-			list.push({level, type: 'anchor', id:anchor});
-		})
-	}
-	return list;
-}
-
-const generateListOfDisplayedItems = (state, openTreeElements, elementsToRender, level = 0) => {
-	let output = [];
-	elementsToRender.forEach(element => {
-		output.push({level, type: 'page', id: element.id});
-		output = output.concat(generateListAnchors(state, element, level));
-
-		if (openTreeElements.includes(element.id) && element.pages) {
-			output = output.concat(
-					generateListOfDisplayedItems(
-							state,
-							openTreeElements,
-							element.pages.map(id => menuConfig.entities.pages[id]),
-							level + 1
-					)
-			)
-		}
-	})
-	return output;
-}
 
 export function tocData(
 		state = initialState,
@@ -76,6 +47,11 @@ export function tocData(
 			return {
 				...state,
 				openIds: action.openIds
+			}
+		case SET_TREE_OPEN_IDS:
+			return {
+				...state,
+				treeOpenIds: action.treeOpenIds
 			}
 		case SET_SELECTED_ANCHOR_ID:
 			return {

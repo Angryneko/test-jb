@@ -12,7 +12,7 @@ const Wrapper = styled.div`
   max-height: 100%;
   overflow: auto;
   width: calc(100vw - 280px);
-  padding: 100px 64px 20px;
+  padding: 100px 64px 64px;
   line-height: 1.2;
   box-sizing: border-box;
 `
